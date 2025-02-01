@@ -7,6 +7,7 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     shim: false,
+    typeCheck: true
   },
   modules: [
     '@vueuse/nuxt',
