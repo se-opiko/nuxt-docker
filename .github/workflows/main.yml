@@ -1,0 +1,34 @@
+# ワークフローの名前
+name: sample workflow
+
+# ワークフローを実行するトリガー
+on: 
+  push: 
+    # mainブランチにpushしたとき
+    branches: ["main"] 
+  pull_request:
+    # 新しくmainブランチでpull requestが作成されたとき
+    branches: ["main"]
+  # 明示的に実行ボタンを押したとき
+  workflow_dispatch: 
+
+# ワークフローで実行される一連の処理
+jobs:
+  # ジョブの一つ
+  build:
+    # どのような仮想環境でジョブの処理を動かすを定義
+    runs-on: ubuntu-latest
+
+    # 処理のステップ
+    steps:
+      # 外部で定義されたアクションを呼び出している
+      # actions/checkout@v3は自分自身のリポジトリのデータを読み込む
+      - uses: actions/checkout@v3
+
+      - name: Run a one-line script
+        run: echo start build
+
+      - name: Run a multi-line script
+        run:
+          echo Add other actions to build,
+          echo test, and deploy your project.
