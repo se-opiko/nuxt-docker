@@ -18,7 +18,7 @@
             </el-card>
           </el-col>
           <el-col :span="6">
-            <el-card shadow="hover">
+            <el-card shadow="hover" @click="$router.push('/todo')">
               <el-image>
                 <template #error>
                   <div class="image-slot">
