@@ -17,19 +17,62 @@ services:
       - CHOKIDAR_USEPOLLING=true
     command: sh -c "npm install && npm run dev"
 
-  mysql:
-    container_name: mysql
-    image: mysql:8.0
+  api:
+    build: 
+      context: .
+      dockerfile: ./docker/api/Dockerfile
+    container_name: api
     volumes:
-      - mysql_data:/var/lib/mysql
+      - type: volume
+        source: api_data
+        target: /var/run/php-fpm
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./api
+        target: /work/api
+      - type: volume
+        source: psysh-store
+        target: /root/.config/psysh
+        volume:
+          nocopy: true
+
+  proxy:
+    build:
+      context: .
+      dockerfile: ./docker/nginx/Dockerfile
+    container_name: proxy
+    ports:
+     - ${WEB_PORT}:80
+     - "9000:9000"
+    volumes:
+      - type: volume
+        source: api_data
+        target: /var/run/php-fpm
+        volume:
+          nocopy: true
+      - type: bind
+        source: ./api
+        target: /work/api
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    volumes:
+      - ./docker/db/data:/var/lib/mysql
+      - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/db/sql:/docker-entrypoint-initdb.d
     environment:
       - MYSQL_ROOT_PASSWORD=rootpassword
       - MYSQL_DATABASE=myapp
       - MYSQL_USER=user
       - MYSQL_PASSWORD=password
+      - TZ='Asia/Tokyo'
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ports:
       - "3306:3306"
 
 volumes:
   nuxt_node_modules:
   mysql_data:
+  api_data:
+  psysh-store:
