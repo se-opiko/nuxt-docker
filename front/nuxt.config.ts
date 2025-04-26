@@ -45,6 +45,5 @@ export default defineNuxtConfig({
   elementPlus: {
     icon: 'ElIcon',
     importStyle: 'scss',
-    themes: ['dark'],
   },
 })
