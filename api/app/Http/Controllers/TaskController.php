@@ -13,7 +13,11 @@ class TaskController extends Controller
      */
     public function index()
     {
-        //
+        $task = Task::all();
+        return response()->json([
+            'message' => 'タスク一覧の取得に成功しました',
+            'tasks' => $task,
+        ], 200);
     }
 
     /**
