@@ -112,20 +112,36 @@
     updatedAt: string;
   }
 
-  const tasks = ref<Task[]>([
-    {
-      id: 1,
-      title: 'タイトル1',
-      description: '説明文が入ります',
-      priority: 1,
-      status: 1,
-      updatedAt: '2024-04-26'
-    }
-  ])
+  const tasks = ref<Task[]>([]);
+
+  type ApiResponse = {
+    tasks: Task[];
+  }
 
   /** 検索 */
-  function onSearch() {
-    
+  async function onSearch() {
+    tasks.value = await fetchTasks();
+    console.log(tasks.value);
+  }
+
+  async function fetchTasks() {
+    const { data, error } = await useFetch<ApiResponse>('http://localhost:9000/api/tasks', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    if (error.value) {
+      ElMessage.error('タスクの取得に失敗しました');
+      return [];
+    }
+
+    if(!data.value || !Array.isArray(data.value.tasks)) {
+      ElMessage.error('タスクの取得に失敗しました');
+      return [];
+    }
+
+    return data.value.tasks;
   }
 
   type  RuleForm = {
