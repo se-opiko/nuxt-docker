@@ -161,11 +161,19 @@
       })
   }
 
+  /** タスク登録 */
+  async function createTask() {
+    await useFetch('http://localhost:9000/api/tasks/store', {
+      method: 'POST',
+      body: JSON.stringify(inputTask)
+    })
+  }
+
   const onSave = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate((valid, fields) => {
+  await formEl.validate(async (valid, fields) => {
     if (valid) {
-      console.log('submit!')
+      await createTask()
     } else {
       console.log('error submit!', fields)
     }
