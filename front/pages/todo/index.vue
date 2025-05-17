@@ -70,22 +70,18 @@
       </el-form>
        <el-tabs v-model="activeTab">
           <el-tab-pane label="すべて" name="all">
-            <template v-for="task in tasks" :key="task.id">
-              <el-card>
-                <div>
-                  <h3>{{ task.title }}</h3>
-                  <p>{{ task.description }}</p>
-                  <!-- 優先度 -->
-                  <span>{{ task.priority }}</span>
-                  <!-- 更新日 -->
-                  <span>{{ task.updatedAt }}</span>
+            <el-skeleton :loading="isLoading" animated>
+              <template #template>
+                <div v-for="i in 3" :key="i" class="mb-3">
+                  <el-skeleton-item variant="text" style="width: 100%; height: 100px" />
                 </div>
-                <div>
-                  <el-button type="primary" icon="Edit" circle />
-                  <el-button type="danger" icon="Delete" circle />
-                </div>
-              </el-card>
-            </template>
+              </template>
+              <template #default>
+                <template v-for="task in tasks" :key="task.id">
+                  <task-card :task="task" class="mb-3" />
+                </template>
+              </template>
+            </el-skeleton>
           </el-tab-pane>
           <el-tab-pane label="未着手" name="pending"></el-tab-pane>
           <el-tab-pane label="進行中" name="progress"></el-tab-pane>
@@ -98,34 +94,66 @@
   </el-container>
 </template>
 <script setup lang="ts">
-  import { Search, Edit, Delete } from '@element-plus/icons-vue'
+  import { ref, reactive, onMounted } from 'vue'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { Search } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
+  import type { Task, ApiResponse } from '@/types/todo'
 
   const searchWord = ref('');
   const activeTab = ref('all');
-  type Task = {
-    id: number;
-    title: string;
-    description: string;
-    priority: number;
-    status: number;
-    updatedAt: string;
-  }
+  const tasks = ref<Task[]>([]);
+  const isLoading = ref(false);
 
-  const tasks = ref<Task[]>([
-    {
-      id: 1,
-      title: 'タイトル1',
-      description: '説明文が入ります',
-      priority: 1,
-      status: 1,
-      updatedAt: '2024-04-26'
+  onMounted(async () => {
+    try {
+      isLoading.value = true;
+      tasks.value = await fetchTasks();
+    } catch (error) {
+      ElMessage.error('タスクの取得に失敗しました');
+      return [];
+    } finally {
+      isLoading.value = false;
     }
-  ])
+  })
 
   /** 検索 */
-  function onSearch() {
-    
+  async function onSearch() {
+    try {
+      isLoading.value = true;
+      tasks.value = await fetchTasks();
+    } catch (error) {
+      ElMessage.error('検索に失敗しました');
+      return [];
+    } finally {
+      isLoading.value = false;
+    }
+    // TODO:検索処理追加
+    // TODO:ソートの追加
+  }
+
+  async function fetchTasks() {
+    try {
+      const { data, error } = await useFetch<ApiResponse>('http://localhost:9000/api/tasks', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (error.value) {
+        throw new Error('APIリクエストに失敗しました');
+      }
+
+      if (!data.value?.tasks) {
+        throw new Error('レスポンスデータが不正です');
+      }
+
+      return data.value.tasks;
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : 'タスクの取得に失敗しました');
+      return [];
+    }
   }
 
   type  RuleForm = {

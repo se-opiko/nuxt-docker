@@ -5,15 +5,26 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TaskStoreRequest;
 use App\Models\Task;
 use Illuminate\Http\Request;
-
+use Illuminate\Http\JsonResponse;
 class TaskController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        //
+        try {
+            $tasks = Task::all();
+            return response()->json([
+                'message' => 'タスク一覧の取得に成功しました',
+                'tasks' => $tasks,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'タスク一覧の取得に失敗しました',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
