@@ -123,7 +123,7 @@
       isLoading.value = true;
       tasks.value = await fetchTasks();
     } catch (error) {
-      ElMessage.error('タスクの取得に失敗しました');
+      ElMessage.error('検索に失敗しました');
       return [];
     } finally {
       isLoading.value = false;
@@ -133,23 +133,27 @@
   }
 
   async function fetchTasks() {
-    const { data, error } = await useFetch<ApiResponse>('http://localhost:9000/api/tasks', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
+    try {
+      const { data, error } = await useFetch<ApiResponse>('http://localhost:9000/api/tasks', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (error.value) {
+        throw new Error('APIリクエストに失敗しました');
       }
-    });
-    if (error.value) {
-      ElMessage.error('タスクの取得に失敗しました');
+
+      if (!data.value?.tasks) {
+        throw new Error('レスポンスデータが不正です');
+      }
+
+      return data.value.tasks;
+    } catch (error) {
+      ElMessage.error(error instanceof Error ? error.message : 'タスクの取得に失敗しました');
       return [];
     }
-
-    if(!data.value || !Array.isArray(data.value.tasks)) {
-      ElMessage.error('タスクの取得に失敗しました');
-      return [];
-    }
-
-    return data.value.tasks;
   }
 
   type  RuleForm = {
