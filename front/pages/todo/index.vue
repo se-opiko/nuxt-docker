@@ -11,48 +11,7 @@
         <template #extra>
           <div class="flex items-center">
             <el-button type="primary" class="ml-2" @click="dialogVisible = true">Create</el-button>
-            <el-dialog
-              v-model="dialogVisible"
-              title="新しいタスク"
-              width="500"
-              :before-close="handleClose"
-            >
-              <el-form ref="ruleFormRef" :model="inputTask" :rules="rules" label-width="auto">
-                <div>
-                  <el-form-item label="タイトル" prop="title">
-                    <el-input v-model="inputTask.title" type="text" maxlength="50" show-word-limit placeholder="タスクのタイトルを入力" />
-                  </el-form-item>
-                </div>
-                <div>
-                  <el-form-item label="説明">
-                    <el-input v-model="inputTask.description" type="textarea" maxlength="1000" show-word-limit placeholder="タスクの説明（オプション）" />
-                  </el-form-item>
-                </div>
-                <div>
-                  <el-form-item label="優先度">
-                    <el-select v-model="inputTask.priority" placeholder="優先度を選択">
-                      <!-- TODO: 優先度の一覧をDBから取得する --> 
-                      <el-option label="低" :value=1 />
-                      <el-option label="中" :value=2 />
-                      <el-option label="高" :value=3 />
-                    </el-select>
-                  </el-form-item>
-                  <el-form-item label="ステータス">
-                    <el-select v-model="inputTask.status" placeholder="ステータスを選択">
-                      <!-- TODO: ステータスの一覧をDBから取得する --> 
-                      <el-option label="未着手" :value=1 />
-                      <el-option label="進行中" :value=2 />
-                      <el-option label="完了" :value=3 />
-                    </el-select>
-                  </el-form-item>
-                </div>
-                <div>
-                  <el-form-item>
-                    <el-button type="primary" @click="onSave(ruleFormRef)">登録</el-button>
-                  </el-form-item>
-                </div>
-              </el-form>
-            </el-dialog>
+            <task-input-modal v-model="dialogVisible" title="タスクを登録する" save-button-text="登録" :on-save="handleCreateTask" />
           </div>
         </template>
       </el-page-header>
@@ -78,7 +37,7 @@
               </template>
               <template #default>
                 <template v-for="task in tasks" :key="task.id">
-                  <task-card :task="task" class="mb-3" />
+                  <task-card :task="task" class="mb-3" :on-fetch-tasks="fetchTasks" />
                 </template>
               </template>
             </el-skeleton>
@@ -94,119 +53,38 @@
   </el-container>
 </template>
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ref, onMounted } from 'vue'
   import { Search } from '@element-plus/icons-vue'
-  import type { FormInstance, FormRules } from 'element-plus'
-  import type { Task, ApiResponse } from '@/types/todo'
+  import type { RuleForm } from '@/types/todo'
+  import { useTasks } from '@/composables/useTasks'
 
   const searchWord = ref('');
   const activeTab = ref('all');
-  const tasks = ref<Task[]>([]);
-  const isLoading = ref(false);
+  const { tasks, isLoading, fetchTasks } = useTasks()
 
   onMounted(async () => {
-    try {
-      isLoading.value = true;
-      tasks.value = await fetchTasks();
-    } catch (error) {
-      ElMessage.error('タスクの取得に失敗しました');
-      return [];
-    } finally {
-      isLoading.value = false;
-    }
+    await fetchTasks()
   })
 
   /** 検索 */
   async function onSearch() {
-    try {
-      isLoading.value = true;
-      tasks.value = await fetchTasks();
-    } catch (error) {
-      ElMessage.error('検索に失敗しました');
-      return [];
-    } finally {
-      isLoading.value = false;
-    }
-    // TODO:検索処理追加
-    // TODO:ソートの追加
+    await fetchTasks()
   }
-
-  async function fetchTasks() {
-    try {
-      const { data, error } = await useFetch<ApiResponse>('http://localhost:9000/api/tasks', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (error.value) {
-        throw new Error('APIリクエストに失敗しました');
-      }
-
-      if (!data.value?.tasks) {
-        throw new Error('レスポンスデータが不正です');
-      }
-
-      return data.value.tasks;
-    } catch (error) {
-      ElMessage.error(error instanceof Error ? error.message : 'タスクの取得に失敗しました');
-      return [];
-    }
-  }
-
-  type  RuleForm = {
-    title: string;
-    description: string;
-    priority: number;
-    status: number;
-  }
-
-  const ruleFormRef = ref<FormInstance>()
-
-  const inputTask = reactive<RuleForm>({
-    title: '',
-    description: '',
-    priority: 2,
-    status: 1,
-  });
-
-  /** バリデーションルール */
-  const rules = reactive<FormRules<RuleForm>>({
-    title: [{ required: true, message: 'タイトルを入力してください', trigger: 'blur' }],
-  });
 
   const dialogVisible = ref(false)
-  // モーダルを閉じたときに呼ばれる
-  const handleClose = (done: () => void) => {
-    ElMessageBox.confirm('閉じると入力した内容が消えますがよろしいでしょうか?')
-      .then(() => {
-        done()
-      })
-      .catch(() => {
-        // catch error
-      })
+
+  const handleCreateTask = async (inputTask: RuleForm) => {
+    await createTask(inputTask)
+    await fetchTasks()
   }
 
   /** タスク登録 */
-  async function createTask() {
+  async function createTask(inputTask: RuleForm) {
     await useFetch('http://localhost:9000/api/tasks/store', {
       method: 'POST',
       body: JSON.stringify(inputTask)
     })
   }
-
-  const onSave = async (formEl: FormInstance | undefined) => {
-  if (!formEl) return
-  await formEl.validate(async (valid, fields) => {
-    if (valid) {
-      await createTask()
-    } else {
-      console.log('error submit!', fields)
-    }
-  })
-}
 </script>
 <style scoped lang="css">
   .base {
