@@ -66,16 +66,33 @@ class TaskController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Task $task)
+    public function update(TaskStoreRequest $request, $id)
     {
-        //
+        $task = Task::findOrFail($id);
+        $task->update($request->validated());
+        return response()->json([
+            'message' => 'タスクが正常に更新されました',
+            'task' => $task,
+        ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Task $task)
+    public function destroy(Request $request, $id): JsonResponse
     {
-        //
+        try {
+            $task = Task::findOrFail($id);
+            $task->delete();
+            
+            return response()->json([
+                'message' => 'タスクが正常に削除されました',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'タスクの削除に失敗しました',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
