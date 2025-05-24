@@ -64,7 +64,7 @@ async function handleDeleteConfirm() {
 // タスクを削除する
 async function deleteTask() {
   try {
-    const { data, error } = await useFetch<ApiResponse>(`http://localhost:9000/api/tasks/${props.task.id}/destroy`, {
+    const { data, error } = await useFetch<ApiResponse>(`http://localhost:9000/api/tasks/${props.task.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'
@@ -81,9 +81,13 @@ async function deleteTask() {
   }
 }
 
-// タスクを編集する
+/**
+ * タスクを更新する
+ * @param {RuleForm} inputTask - 更新するタスクの情報
+ * @throws {Error} タスクの更新に失敗した場合
+ */
 async function editTask(inputTask: RuleForm) {
-  const { data, error } = await useFetch<ApiResponse>(`http://localhost:9000/api/tasks/${props.task.id}/update`, {
+  const { data, error } = await useFetch<ApiResponse>(`http://localhost:9000/api/tasks/${props.task.id}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json'

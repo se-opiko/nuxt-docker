@@ -78,7 +78,11 @@
     await fetchTasks()
   }
 
-  /** タスク登録 */
+  /**
+   * タスクを作成する
+   * @param {RuleForm} inputTask - 作成するタスクの情報
+   * @throws {Error} タスクの作成に失敗した場合
+   */
   async function createTask(inputTask: RuleForm) {
     await useFetch('http://localhost:9000/api/tasks/store', {
       method: 'POST',
