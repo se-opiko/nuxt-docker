@@ -107,6 +107,6 @@ async function editTask(inputTask: RuleForm) {
 
 // 優先度の表示
 const priority = computed(() => {
-  return props.task.priority === 1 ? '高' : props.task.priority === 2 ? '中' : '低'
+  return props.task.priority === 1 ? '低' : props.task.priority === 2 ? '中' : '高'
 })
 </script>
