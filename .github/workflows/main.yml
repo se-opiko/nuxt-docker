@@ -18,12 +18,22 @@ jobs:
   build:
     # どのような仮想環境でジョブの処理を動かすを定義
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: mysql:8.0
+        # 必要に応じて設定
 
     # 処理のステップ
     steps:
       # 外部で定義されたアクションを呼び出している
       # actions/checkout@v3は自分自身のリポジトリのデータを読み込む
       - uses: actions/checkout@v3
+
+      - name: Set up Docker Compose
+        run: docker-compose up -d
+
+      - name: Install dependencies in api container
+        run: docker-compose exec -T api composer install
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -32,9 +42,6 @@ jobs:
           extensions: mbstring, dom, fileinfo, mysql
           coverage: xdebug
           
-      - name: Install Dependencies
-        run: composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-        
       - name: Execute PHPUnit Tests
         run: vendor/bin/phpunit --coverage-text
 
