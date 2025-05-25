@@ -43,7 +43,7 @@ jobs:
           coverage: xdebug
           
       - name: Execute PHPUnit Tests
-        run: vendor/bin/phpunit --coverage-text
+        run: docker compose exec -T api vendor/bin/phpunit --coverage-text
 
       - name: Run a one-line script
         run: echo start build
