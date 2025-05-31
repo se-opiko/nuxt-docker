@@ -6,15 +6,21 @@ use App\Http\Requests\TaskStoreRequest;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\TaskSearchRequest;
+
 class TaskController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(TaskSearchRequest $request): JsonResponse
     {
         try {
-            $tasks = Task::all();
+            $query = Task::query();
+            if ($request->filled('status')) {
+                $query->where('status', $request->input('status'));
+            }
+            $tasks = $query->get();
             return response()->json([
                 'message' => 'タスク一覧の取得に成功しました',
                 'tasks' => $tasks,

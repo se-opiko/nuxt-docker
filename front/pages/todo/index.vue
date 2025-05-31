@@ -27,8 +27,8 @@
           <el-button type="primary" @click="onSearch">検索</el-button>
         </el-form-item>
       </el-form>
-       <el-tabs v-model="activeTab">
-          <el-tab-pane label="すべて" name="all">
+       <el-tabs v-model="activeTab"  type="border-card" @tab-change="onTabChange">
+          <el-tab-pane v-for="tab in tabPanels" :key="tab.name" :label="tab.label" :name="tab.name">
             <el-skeleton :loading="isLoading" animated>
               <template #template>
                 <div v-for="i in 3" :key="i" class="mb-3">
@@ -36,15 +36,12 @@
                 </div>
               </template>
               <template #default>
-                <template v-for="task in tasks" :key="task.id">
+                <template v-for="(task, index) in tasks" :key="index">
                   <task-card :task="task" class="mb-3" :on-fetch-tasks="fetchTasks" />
                 </template>
               </template>
             </el-skeleton>
           </el-tab-pane>
-          <el-tab-pane label="未着手" name="pending"></el-tab-pane>
-          <el-tab-pane label="進行中" name="progress"></el-tab-pane>
-          <el-tab-pane label="完了" name="complete"></el-tab-pane>
        </el-tabs>
     </el-main>
     <el-footer>
@@ -60,7 +57,7 @@
 
   const searchWord = ref('');
   const activeTab = ref('all');
-  const { tasks, isLoading, fetchTasks } = useTasks()
+  const { tasks, isLoading, searchParams, fetchTasks } = useTasks()
 
   onMounted(async () => {
     await fetchTasks()
@@ -88,6 +85,40 @@
       method: 'POST',
       body: JSON.stringify(inputTask)
     })
+  }
+
+  const tabPanels = [
+    {
+      label: 'すべて',
+      name: 'all', 
+      status: undefined,
+    },
+    {
+      label: '未着手',
+      name: 'pending',
+      status: 1,
+    },
+    {
+      label: '進行中', 
+      name: 'progress',
+      status: 2,
+    },
+    {
+      label: '完了',
+      name: 'complete',
+      status: 3,
+    }
+  ] as const
+
+  /**
+   * タブが変更された時の処理
+   */
+  async function onTabChange() {
+    const selectedTab = tabPanels.find(panel => panel.name === activeTab.value)
+    if (selectedTab) {
+      searchParams.value.status = selectedTab.status
+    }
+    await fetchTasks()
   }
 </script>
 <style scoped lang="css">
