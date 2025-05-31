@@ -5,7 +5,10 @@ import type { Task, ApiResponse } from '@/types/todo'
 export const useTasks = () => {
   const tasks = ref<Task[]>([])
   const isLoading = ref(false)
-
+  type SearchParams = {
+    status?: number
+  }
+  const searchParams = ref<SearchParams>({})
   const fetchTasks = async () => {
     try {
       isLoading.value = true
@@ -13,7 +16,8 @@ export const useTasks = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        params: searchParams.value
       })
       
       if (error.value) {
@@ -36,6 +40,7 @@ export const useTasks = () => {
   return {
     tasks,
     isLoading,
+    searchParams,
     fetchTasks
   }
 } 
