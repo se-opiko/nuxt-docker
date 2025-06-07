@@ -31,6 +31,23 @@
           placeholder="タスクの説明（オプション）" 
         />
       </el-form-item>
+
+      <el-form-item label="プロジェクト">
+        <el-select 
+          :model-value="projectIdValue" 
+          @update:model-value="updateProjectId"
+          placeholder="プロジェクトを選択（任意）"
+          clearable
+        >
+          <el-option label="未分類" :value="''" />
+          <el-option 
+            v-for="project in projects" 
+            :key="project.id" 
+            :label="project.name" 
+            :value="project.id.toString()" 
+          />
+        </el-select>
+      </el-form-item>
   
       <el-form-item label="優先度">
         <el-select 
@@ -68,9 +85,10 @@
   </el-dialog>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 import type { Task, RuleForm } from '@/types/todo'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useProjects } from '@/composables/useProjects'
 
 const props = defineProps({
   modelValue: {
@@ -93,6 +111,7 @@ const props = defineProps({
       description: '',
       priority: 2,
       status: 1,
+      project_id: null,
       updated_at: '',
       created_at: '',
     })
@@ -109,19 +128,54 @@ const emit = defineEmits<{
 }>()
 
 const ruleFormRef = ref<FormInstance>()
+const { projects, fetchProjects } = useProjects()
+
+/**
+ * モーダルが開かれた時のみプロジェクト一覧を取得
+ */
+watch(() => props.modelValue, async (newValue) => {
+  if (newValue && projects.value.length === 0) {
+    console.log('モーダルが開かれたため、プロジェクト一覧を取得します')
+    await fetchProjects()
+  }
+})
+
+/**
+ * TaskのProject_idをフォーム用に変換する
+ * nullをundefinedに変換してElement Plusで使いやすくする
+ */
+const convertTaskProjectIdForForm = (projectId: number | null): number | undefined => {
+  return projectId === null ? undefined : projectId
+}
 
 const inputTask = reactive<RuleForm>({
   title: props.task?.title || '',
   description: props.task?.description || '',
   priority: props.task?.priority || 2,
   status: props.task?.status || 1,
+  project_id: convertTaskProjectIdForForm(props.task?.project_id),
 })
+
+/**
+ * Element Plus用のproject_id表示値
+ */
+const projectIdValue = computed(() => {
+  return inputTask.project_id ? inputTask.project_id.toString() : ''
+})
+
+/**
+ * プロジェクトIDの更新処理
+ */
+const updateProjectId = (value: string) => {
+  inputTask.project_id = value === '' ? undefined : parseInt(value)
+}
 
 const clearInputTask = () => {
   inputTask.title = props.task?.title || ''
   inputTask.description = props.task?.description || ''
   inputTask.priority = props.task?.priority || 2
   inputTask.status = props.task?.status || 1
+  inputTask.project_id = convertTaskProjectIdForForm(props.task?.project_id)
 }
 
 /** バリデーションルール */
@@ -141,22 +195,33 @@ const handleClose = (done: () => void) => {
     })
 }
 
+// 保存処理
 const onSave = async (formEl: FormInstance | undefined) => {
   if (!formEl) return
-  await formEl.validate(async (valid, fields) => {
+  
+  await formEl.validate(async (valid: boolean) => {
     if (valid) {
       try {
-        // emitの代わりに、親コンポーネントから渡された関数を直接呼び出す
         await props.onSave(inputTask)
-        ElMessage.success(`タスクを${props.saveButtonText}しました`)
         emit('update:modelValue', false)
         clearInputTask()
+        ElMessage.success(props.saveButtonText + 'しました')
       } catch (error) {
-        ElMessage.error(`タスクの${props.saveButtonText}に失敗しました`)
+        console.error(error)
+        ElMessage.error(props.saveButtonText + 'に失敗しました')
       }
-    } else {
-      console.log('error submit!', fields)
     }
   })
 }
+
+// taskプロパティの変更を監視してフォームを更新
+watch(() => props.task, (newTask) => {
+  if (newTask) {
+    inputTask.title = newTask.title || ''
+    inputTask.description = newTask.description || ''
+    inputTask.priority = newTask.priority || 2
+    inputTask.status = newTask.status || 1
+    inputTask.project_id = convertTaskProjectIdForForm(newTask.project_id)
+  }
+}, { deep: true })
 </script>

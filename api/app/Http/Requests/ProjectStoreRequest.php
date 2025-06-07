@@ -5,11 +5,11 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Task Search Request
+ * Project Store Request
  * 
- * タスク検索時のバリデーションを定義する
+ * プロジェクトの作成・更新時のバリデーションを定義する
  */
-class TaskSearchRequest extends FormRequest
+class ProjectStoreRequest extends FormRequest
 {
     /**
      * リクエストが認証されているかどうかを判定する
@@ -29,10 +29,9 @@ class TaskSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'nullable|string|max:50',
-            'status' => 'nullable|integer',
-            'priority' => 'nullable|integer',
-            'project_id' => 'nullable|integer|exists:projects,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
         ];
     }
 
@@ -44,7 +43,10 @@ class TaskSearchRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'project_id.exists' => '指定されたプロジェクトが存在しません。',
+            'name.required' => 'プロジェクト名は必須です。',
+            'name.max' => 'プロジェクト名は255文字以内で入力してください。',
+            'description.max' => '説明は1000文字以内で入力してください。',
+            'color.regex' => 'カラーコードは#FFFFFFの形式で入力してください。',
         ];
     }
 } 

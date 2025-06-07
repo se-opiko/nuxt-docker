@@ -2,7 +2,20 @@
   <el-card shadow="hover">
     <template #header>
       <div class="flex justify-between">
-        <span class="text-lg font-bold">{{ task.title }}</span>
+        <div class="flex flex-col">
+          <span class="text-lg font-bold">{{ task.title }}</span>
+          <!-- プロジェクト表示 -->
+          <div v-if="task.project" class="flex items-center mt-1">
+            <el-tag 
+              :color="task.project.color || '#409eff'" 
+              :style="{ color: getTextColor(task.project.color) }"
+              size="small"
+              class="mr-2"
+            >
+              {{ task.project.name }}
+            </el-tag>
+          </div>
+        </div>
         <div>
           <el-button type="primary" circle class="mr-2" @click="isEditTaskModalVisible = true">
             <el-icon><Edit /></el-icon>
@@ -29,10 +42,14 @@
     </template>
     <div>
       <p>{{ task.description }}</p>
-      <!-- 優先度 -->
-      <el-tag class="mr-4" :type="priority === '高' ? 'danger' : priority === '中' ? 'warning' : 'success'">{{ priority }}</el-tag>
-      <!-- 更新日 -->
-      <small>{{ formatDate(new Date(task.updated_at || task.created_at), 'YYYY/MM/DD') }}</small>
+      <div class="flex items-center justify-between mt-2">
+        <div class="flex items-center">
+          <!-- 優先度 -->
+          <el-tag class="mr-4" :type="priority === '高' ? 'danger' : priority === '中' ? 'warning' : 'success'">{{ priority }}</el-tag>
+          <!-- 更新日 -->
+          <small>{{ formatDate(new Date(task.updated_at || task.created_at), 'YYYY/MM/DD') }}</small>
+        </div>
+      </div>
     </div>
   </el-card>
 </template>
@@ -42,43 +59,21 @@ import { Edit, Delete } from '@element-plus/icons-vue'
 import type { Task, RuleForm } from '@/types/todo'
 import type { ApiResponse } from '@/types/todo'
 import { ElMessage } from 'element-plus'
+import { useTasks } from '@/composables/useTasks'
 
 const props = defineProps({
   task: {
     type: Object as PropType<Task>,
-    required: true
-  },
-  onFetchTasks: {
-    type: Function,
     required: true
   }
 })
 
 const isDeleteConfirmModalVisible = ref(false)
 const isEditTaskModalVisible = ref(false)
+const { updateTask, deleteTask } = useTasks()
 
 async function handleDeleteConfirm() {
-  await deleteTask()
-}
-
-// タスクを削除する
-async function deleteTask() {
-  try {
-    const { data, error } = await useFetch<ApiResponse>(`http://localhost:9000/api/tasks/${props.task.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-    if (error.value) {
-      throw new Error('タスクの削除に失敗しました');
-    }
-    ElMessage.success('タスクを削除しました');
-    await props.onFetchTasks()
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('タスクの削除に失敗しました');
-  }
+  await deleteTask(props.task.id)
 }
 
 /**
@@ -87,26 +82,40 @@ async function deleteTask() {
  * @throws {Error} タスクの更新に失敗した場合
  */
 async function editTask(inputTask: RuleForm) {
-  const { data, error } = await useFetch<ApiResponse>(`http://localhost:9000/api/tasks/${props.task.id}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: {
-      title: inputTask.title,
-      description: inputTask.description,
-      priority: inputTask.priority,
-      status: inputTask.status,
-    }
-  });
-  if (error.value) {
-    throw new Error('タスクの編集に失敗しました');
+  const taskData = {
+    title: inputTask.title,
+    description: inputTask.description,
+    priority: inputTask.priority,
+    status: inputTask.status,
+    project_id: inputTask.project_id,
   }
-  await props.onFetchTasks()
+  await updateTask(props.task.id, taskData)
 }
 
-// 優先度の表示
+/**
+ * 優先度の表示文字列を取得する
+ */
 const priority = computed(() => {
   return props.task.priority === 1 ? '低' : props.task.priority === 2 ? '中' : '高'
 })
+
+/**
+ * プロジェクトのカラーに応じた文字色を取得する
+ * @param {string | null} color - プロジェクトのカラーコード
+ * @returns {string} 文字色
+ */
+function getTextColor(color: string | null): string {
+  if (!color) return '#ffffff'
+  
+  // カラーコードから明度を計算して、適切な文字色を決定
+  const hex = color.replace('#', '')
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  
+  // 明度計算（WCAG基準）
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000
+  
+  return brightness > 128 ? '#000000' : '#ffffff'
+}
 </script>

@@ -8,19 +8,35 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\TaskSearchRequest;
 
+/**
+ * Task コントローラー
+ * 
+ * タスクの CRUD 操作を管理する
+ */
 class TaskController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * タスク一覧を取得する
+     * プロジェクト情報も含めて取得する
+     *
+     * @param TaskSearchRequest $request バリデート済みリクエスト
+     * @return JsonResponse タスク一覧のJSONレスポンス
      */
     public function index(TaskSearchRequest $request): JsonResponse
     {
         try {
-            $query = Task::query();
+            $query = Task::with('project');
+            
             if ($request->filled('status')) {
                 $query->where('status', $request->input('status'));
             }
-            $tasks = $query->get();
+            
+            if ($request->filled('project_id')) {
+                $query->where('project_id', $request->input('project_id'));
+            }
+            
+            $tasks = $query->orderBy('created_at', 'desc')->get();
+            
             return response()->json([
                 'message' => 'タスク一覧の取得に成功しました',
                 'tasks' => $tasks,
@@ -42,15 +58,27 @@ class TaskController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * 新しいタスクを作成する
+     *
+     * @param TaskStoreRequest $request バリデート済みリクエスト
+     * @return JsonResponse 作成されたタスクのJSONレスポンス
      */
     public function store(TaskStoreRequest $request)
     {
-        $task = Task::create($request->validated());
-        return response()->json([
-            'message' => 'タスクが正常に作成されました',
-            'task' => $task,
-        ], 201);
+        try {
+            $task = Task::create($request->validated());
+            $task->load('project'); // プロジェクト情報を含めて返す
+            
+            return response()->json([
+                'message' => 'タスクが正常に作成されました',
+                'task' => $task,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'タスクの作成に失敗しました',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -70,22 +98,38 @@ class TaskController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * 指定されたタスクを更新する
+     *
+     * @param TaskStoreRequest $request バリデート済みリクエスト
+     * @param int $id タスクID
+     * @return JsonResponse 更新されたタスクのJSONレスポンス
      */
     public function update(TaskStoreRequest $request, $id)
     {
-        $task = Task::findOrFail($id);
-        $task->update($request->validated());
-        return response()->json([
-            'message' => 'タスクが正常に更新されました',
-            'task' => $task,
-        ], 200);
+        try {
+            $task = Task::findOrFail($id);
+            $task->update($request->validated());
+            $task->load('project'); // プロジェクト情報を含めて返す
+            
+            return response()->json([
+                'message' => 'タスクが正常に更新されました',
+                'task' => $task,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'タスクの更新に失敗しました',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * 指定されたタスクを削除する
+     *
+     * @param int $id タスクID
+     * @return JsonResponse 削除結果のJSONレスポンス
      */
-    public function destroy(Request $request, $id): JsonResponse
+    public function destroy($id)
     {
         try {
             $task = Task::findOrFail($id);
