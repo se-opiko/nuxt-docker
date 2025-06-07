@@ -10,10 +10,16 @@
         <h3>アプリコレクション</h3>
         <el-row :gutter="20">
           <el-col :span="6">
-            <el-card shadow="hover" @click="openAppCollection">
-              <!-- <el-image src="/images/sf6-combo.png" /> -->
+            <el-card shadow="hover">
+              <el-image>
+                <template #error>
+                  <div class="image-slot">
+                    <el-icon><icon-picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
               <template #footer>
-                <h4>ストリートファイター6 コンボツリー</h4>
+                <h4>アプリ１</h4>
               </template>
             </el-card>
           </el-col>
@@ -72,9 +78,6 @@ import { Picture as IconPicture } from '@element-plus/icons-vue'
 /* eslint-disable */
 const router = useRouter();
 
-function openAppCollection() {
-  router.push('/sf6-combo');
-}
 </script>
 <style scoped>
 .header {
