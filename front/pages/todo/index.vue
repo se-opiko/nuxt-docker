@@ -1,8 +1,8 @@
 <template>
   <el-container class="base bg-white">
     <!-- ヘッダー -->
-    <el-header class="pt-2">
-      <el-page-header icon="" title="Back" color="black" @back="$router.back()">
+    <el-header>
+      <el-page-header icon="" title="戻る" color="black" @back="$router.back()">
         <template #content>
           <div class="flex items-center">
             <span class="text-large font-600 mr-3"> タスク管理 </span>
@@ -10,15 +10,15 @@
         </template>
         <template #extra>
           <div class="flex items-center">
-            <el-button type="primary" class="ml-2" @click="dialogVisible = true">Create</el-button>
+            <el-button type="primary" class="ml-2" @click="dialogVisible = true">作成</el-button>
             <task-input-modal v-model="dialogVisible" title="タスクを登録する" save-button-text="登録" :on-save="handleCreateTask" />
           </div>
         </template>
       </el-page-header>
     </el-header>
     <!-- メイン -->
-    <el-main>
-      <el-form>
+    <el-main class="main-content">
+      <el-form class="search-form">
         <el-form-item>
           <el-input v-model="searchWord" :prefix-icon="Search" placeholder="タスクを検索"></el-input>
         </el-form-item>
@@ -27,20 +27,22 @@
           <el-button type="primary" @click="onSearch">検索</el-button>
         </el-form-item>
       </el-form>
-       <el-tabs v-model="activeTab"  type="border-card" @tab-change="onTabChange">
+       <el-tabs v-model="activeTab" type="border-card" class="tabs-container" @tab-change="onTabChange">
           <el-tab-pane v-for="tab in tabPanels" :key="tab.name" :label="tab.label" :name="tab.name">
-            <el-skeleton :loading="isLoading" animated>
-              <template #template>
-                <div v-for="i in 3" :key="i" class="mb-3">
-                  <el-skeleton-item variant="text" style="width: 100%; height: 100px" />
-                </div>
-              </template>
-              <template #default>
-                <template v-for="(task, index) in tasks" :key="index">
-                  <task-card :task="task" class="mb-3" :on-fetch-tasks="fetchTasks" />
+            <div class="tab-content">
+              <el-skeleton :loading="isLoading" animated>
+                <template #template>
+                  <div v-for="i in 3" :key="i" class="mb-3">
+                    <el-skeleton-item variant="text" style="width: 100%; height: 100px" />
+                  </div>
                 </template>
-              </template>
-            </el-skeleton>
+                <template #default>
+                  <template v-for="(task, index) in tasks" :key="index">
+                    <task-card :task="task" class="mb-3" :on-fetch-tasks="fetchTasks" />
+                  </template>
+                </template>
+              </el-skeleton>
+            </div>
           </el-tab-pane>
        </el-tabs>
     </el-main>
@@ -51,7 +53,7 @@
 </template>
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
+  import { Search, Plus } from '@element-plus/icons-vue'
   import type { RuleForm } from '@/types/todo'
   import { useTasks } from '@/composables/useTasks'
 
@@ -124,5 +126,43 @@
 <style scoped lang="css">
   .base {
     min-height: 100vh;
+  }
+
+  /* ヘッダーの上部に余白を追加 */
+  .el-header {
+    padding-top: 20px;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .search-form {
+    margin-bottom: 16px;
+  }
+
+  .tab-content {
+    max-height: 60vh; /* ビューポートの60%の高さに制限 */
+    overflow-y: auto;
+    padding-right: 8px; /* スクロールバーとの間隔 */
+  }
+
+  /* スクロールバーのスタイリング（Webkit系ブラウザ） */
+  .tab-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .tab-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  .tab-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+  }
+
+  .tab-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
   }
 </style>
