@@ -19,13 +19,38 @@
     <!-- メイン -->
     <el-main class="main-content">
       <el-form class="search-form">
-        <el-form-item>
-          <el-input v-model="searchWord" :prefix-icon="Search" placeholder="タスクを検索"></el-input>
-        </el-form-item>
-        <el-form-item>
-          <!-- FIXME:リアルタイム検索にする？ -->
-          <el-button type="primary" @click="onSearch">検索</el-button>
-        </el-form-item>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item>
+              <el-input v-model="searchWord" :prefix-icon="Search" placeholder="タスクを検索"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item>
+              <el-select 
+                v-model="selectedProjectId" 
+                placeholder="プロジェクトでフィルタ"
+                clearable
+                @change="onProjectFilterChange"
+              >
+                <el-option label="すべてのプロジェクト" value="" />
+                <el-option label="未分類" value="null" />
+                <el-option 
+                  v-for="project in projects" 
+                  :key="project.id" 
+                  :label="project.name" 
+                  :value="project.id" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item>
+              <!-- FIXME:リアルタイム検索にする？ -->
+              <el-button type="primary" @click="onSearch">検索</el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
        <el-tabs v-model="activeTab" type="border-card" class="tabs-container" @tab-change="onTabChange">
           <el-tab-pane v-for="tab in tabPanels" :key="tab.name" :label="tab.label" :name="tab.name">
@@ -38,7 +63,7 @@
                 </template>
                 <template #default>
                   <template v-for="(task, index) in tasks" :key="index">
-                    <task-card :task="task" class="mb-3" :on-fetch-tasks="fetchTasks" />
+                    <task-card :task="task" class="mb-3" />
                   </template>
                 </template>
               </el-skeleton>
@@ -56,13 +81,19 @@
   import { Search, Plus } from '@element-plus/icons-vue'
   import type { RuleForm } from '@/types/todo'
   import { useTasks } from '@/composables/useTasks'
+  import { useProjects } from '@/composables/useProjects'
 
   const searchWord = ref('');
   const activeTab = ref('all');
-  const { tasks, isLoading, searchParams, fetchTasks } = useTasks()
+  const selectedProjectId = ref<string | number>('');
+  const { tasks, isLoading, searchParams, fetchTasks, createTask } = useTasks()
+  const { projects, fetchProjects } = useProjects()
 
   onMounted(async () => {
-    await fetchTasks()
+    await Promise.all([
+      fetchTasks(),
+      fetchProjects()
+    ])
   })
 
   /** 検索 */
@@ -70,23 +101,27 @@
     await fetchTasks()
   }
 
+  /**
+   * プロジェクトフィルタの変更処理
+   */
+  async function onProjectFilterChange() {
+    if (selectedProjectId.value === '') {
+      // すべてのプロジェクト
+      searchParams.value.project_id = undefined
+    } else if (selectedProjectId.value === 'null') {
+      // 未分類（project_idがnull）
+      searchParams.value.project_id = null
+    } else {
+      // 特定のプロジェクト
+      searchParams.value.project_id = Number(selectedProjectId.value)
+    }
+    await fetchTasks()
+  }
+
   const dialogVisible = ref(false)
 
   const handleCreateTask = async (inputTask: RuleForm) => {
     await createTask(inputTask)
-    await fetchTasks()
-  }
-
-  /**
-   * タスクを作成する
-   * @param {RuleForm} inputTask - 作成するタスクの情報
-   * @throws {Error} タスクの作成に失敗した場合
-   */
-  async function createTask(inputTask: RuleForm) {
-    await useFetch('http://localhost:9000/api/tasks/store', {
-      method: 'POST',
-      body: JSON.stringify(inputTask)
-    })
   }
 
   const tabPanels = [
