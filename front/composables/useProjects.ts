@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Project, ProjectApiResponse, ProjectForm } from '@/types/todo'
 
 // グローバルな状態をファイルレベルで定義（シングルトンパターン）
@@ -14,10 +14,11 @@ export const useProjects = () => {
 
   /**
    * プロジェクト一覧を取得する
+   * @param forceRefresh 強制的に再取得するかどうか
    */
-  const fetchProjects = async () => {
-    // 既に取得済みまたは取得中の場合はスキップ
-    if (isFetched || isLoading.value) {
+  const fetchProjects = async (forceRefresh: boolean = false) => {
+    // 強制リフレッシュまたは未取得の場合のみ実行
+    if (!forceRefresh && (isFetched || isLoading.value)) {
       console.log('プロジェクト一覧は既に取得済み、またはリクエスト中です')
       return projects.value
     }
@@ -77,9 +78,8 @@ export const useProjects = () => {
 
       ElMessage.success('プロジェクトが作成されました')
       
-      // 作成後にキャッシュをクリアして最新データを取得
-      isFetched = false
-      await fetchProjects()
+      // 作成後にデータを強制リフレッシュ
+      await fetchProjects(true)
     } catch (error) {
       ElMessage.error(error instanceof Error ? error.message : 'プロジェクトの作成に失敗しました')
       throw error
@@ -107,9 +107,8 @@ export const useProjects = () => {
 
       ElMessage.success('プロジェクトが更新されました')
       
-      // 更新後にキャッシュをクリアして最新データを取得
-      isFetched = false
-      await fetchProjects()
+      // 更新後にデータを強制リフレッシュ
+      await fetchProjects(true)
     } catch (error) {
       ElMessage.error(error instanceof Error ? error.message : 'プロジェクトの更新に失敗しました')
       throw error
@@ -117,11 +116,23 @@ export const useProjects = () => {
   }
 
   /**
-   * プロジェクトを削除する
+   * プロジェクトを削除する（確認ダイアログ付き）
    * @param id プロジェクトID
+   * @param projectName プロジェクト名（確認ダイアログ用）
    */
-  const deleteProject = async (id: number) => {
+  const deleteProject = async (id: number, projectName: string) => {
     try {
+      // 削除確認ダイアログ
+      await ElMessageBox.confirm(
+        `プロジェクト「${projectName}」を削除しますか？\n関連するタスクがある場合は未分類に移動されます。`,
+        '削除確認',
+        {
+          confirmButtonText: '削除する',
+          cancelButtonText: 'キャンセル',
+          type: 'warning',
+        }
+      )
+
       const { data, error } = await useFetch(`http://localhost:9000/api/projects/${id}`, {
         method: 'DELETE',
         headers: {
@@ -133,24 +144,45 @@ export const useProjects = () => {
         throw new Error('プロジェクトの削除に失敗しました')
       }
 
-      ElMessage.success('プロジェクトが削除されました')
+      // サーバーからの警告メッセージを表示
+      const responseData = data.value as any
+      if (responseData?.warning) {
+        ElMessage({
+          message: responseData.warning,
+          type: 'warning',
+          duration: 5000,
+        })
+      } else {
+        ElMessage.success('プロジェクトが削除されました')
+      }
       
-      // 削除後にキャッシュをクリアして最新データを取得
-      isFetched = false
-      await fetchProjects()
+      // 削除後にデータを強制リフレッシュ
+      await fetchProjects(true)
     } catch (error) {
+      if (error === 'cancel') {
+        // ユーザーがキャンセルした場合
+        return
+      }
       ElMessage.error(error instanceof Error ? error.message : 'プロジェクトの削除に失敗しました')
       throw error
     }
   }
 
   /**
-   * プロジェクトキャッシュをクリアする（テスト用）
+   * プロジェクトキャッシュをクリアする（開発・テスト用）
    */
   const clearProjectsCache = () => {
     isFetched = false
     projects.value = []
     console.log('プロジェクトキャッシュをクリアしました')
+  }
+
+  /**
+   * 特定のプロジェクトをキャッシュから検索する
+   * @param id プロジェクトID
+   */
+  const getProjectById = (id: number): Project | undefined => {
+    return projects.value.find(project => project.id === id)
   }
 
   return {
@@ -160,6 +192,7 @@ export const useProjects = () => {
     createProject,
     updateProject,
     deleteProject,
-    clearProjectsCache
+    clearProjectsCache,
+    getProjectById
   }
 } 

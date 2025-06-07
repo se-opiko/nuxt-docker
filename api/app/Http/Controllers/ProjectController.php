@@ -85,13 +85,12 @@ class ProjectController extends Controller
      * 指定されたプロジェクトを更新する
      *
      * @param ProjectStoreRequest $request バリデート済みリクエスト
-     * @param int $id プロジェクトID
+     * @param Project $project プロジェクトモデル（Route Model Binding）
      * @return JsonResponse 更新されたプロジェクトのJSONレスポンス
      */
-    public function update(ProjectStoreRequest $request, int $id): JsonResponse
+    public function update(ProjectStoreRequest $request, Project $project): JsonResponse
     {
         try {
-            $project = Project::findOrFail($id);
             $project->update($request->validated());
             
             return response()->json([
@@ -109,22 +108,33 @@ class ProjectController extends Controller
     /**
      * 指定されたプロジェクトを削除する
      *
-     * @param int $id プロジェクトID
+     * @param Project $project プロジェクトモデル（Route Model Binding）
      * @return JsonResponse 削除結果のJSONレスポンス
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(Project $project): JsonResponse
     {
         try {
-            $project = Project::findOrFail($id);
+            // 関連するタスクの数を確認
+            $taskCount = $project->tasks()->count();
             
-            // 関連するタスクのproject_idをnullに設定
-            $project->tasks()->update(['project_id' => null]);
-            
-            $project->delete();
-            
-            return response()->json([
-                'message' => 'プロジェクトが正常に削除されました',
-            ], 200);
+            if ($taskCount > 0) {
+                // 関連するタスクがある場合は警告を含むレスポンス
+                $project->tasks()->update(['project_id' => null]);
+                $project->delete();
+                
+                return response()->json([
+                    'message' => "プロジェクトが正常に削除されました。{$taskCount}件のタスクが未分類に移動されました。",
+                    'warning' => "削除されたプロジェクトに関連していた{$taskCount}件のタスクは未分類になりました。",
+                    'affected_tasks_count' => $taskCount,
+                ], 200);
+            } else {
+                // 関連タスクがない場合は通常の削除
+                $project->delete();
+                
+                return response()->json([
+                    'message' => 'プロジェクトが正常に削除されました',
+                ], 200);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'プロジェクトの削除に失敗しました',
