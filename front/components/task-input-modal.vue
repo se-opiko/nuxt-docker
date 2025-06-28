@@ -74,12 +74,14 @@
       </el-form-item>
   
       <el-form-item>
-        <el-button 
-          type="primary" 
-          @click="onSave(ruleFormRef)"
-        >
-          {{ saveButtonText }}
-        </el-button>
+        <div style="display: flex; justify-content: center; width: 100%;">
+          <el-button 
+            type="primary" 
+            @click="onSave(ruleFormRef)"
+          >
+            {{ saveButtonText }}
+          </el-button>
+        </div>
       </el-form-item>
     </el-form>
   </el-dialog>
