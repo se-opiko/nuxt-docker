@@ -32,8 +32,14 @@ jobs:
       - name: Set up Docker Compose
         run: docker compose up -d
 
-      - name: Install dependencies in api container
-        run: docker compose exec -T api composer install
+      - name: Wait for containers to be ready
+        run: |
+          echo "Waiting for API container initialization..."
+          until docker compose exec -T api php artisan --version > /dev/null 2>&1; do
+            echo "Waiting for API container to be ready..."
+            sleep 5
+          done
+          echo "API container is ready!"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2

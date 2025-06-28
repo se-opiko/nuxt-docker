@@ -22,6 +22,8 @@ services:
       context: .
       dockerfile: ./docker/api/Dockerfile
     container_name: api
+    depends_on:
+      - mysql
     volumes:
       - type: volume
         source: api_data
@@ -32,10 +34,33 @@ services:
         source: ./api
         target: /work/api
       - type: volume
+        source: api_vendor
+        target: /work/api/vendor
+        volume:
+          nocopy: true
+      - type: volume
         source: psysh-store
         target: /root/.config/psysh
         volume:
           nocopy: true
+    command: sh -c "
+      if [ ! -f .env ]; then
+        echo '.envファイルが見つかりません。.env.exampleからコピーします...';
+        cp .env.example .env;
+      fi &&
+      echo 'Composer依存関係をインストール中...' &&
+      composer install &&
+      echo 'Laravelアプリケーションキーを生成中...' &&
+      php artisan key:generate --force &&
+      echo 'MySQLデータベース接続を待機中...' &&
+      until php -r 'try { new PDO(\"mysql:host=mysql;port=3306;dbname=myapp\", \"user\", \"password\"); echo \"connected\"; } catch (Exception \$e) { exit(1); }' > /dev/null 2>&1; do
+        echo 'MySQLデータベースの準備を待機中...';
+        sleep 3;
+      done &&
+      echo 'データベースマイグレーション実行中...' &&
+      php artisan migrate --force &&
+      echo 'PHP-FPMを起動中...' &&
+      php-fpm"
 
   proxy:
     build:
@@ -75,4 +100,5 @@ volumes:
   nuxt_node_modules:
   mysql_data:
   api_data:
+  api_vendor:
   psysh-store:
