@@ -1,5 +1,5 @@
 <template>
-  <el-container class="base bg-white">
+  <el-container class="base bg-red">
     <!-- ヘッダー -->
     <el-header>
       <el-page-header icon="" title="戻る" color="black" @back="$router.back()">
@@ -161,6 +161,7 @@
 <style scoped lang="css">
   .base {
     min-height: 100vh;
+    background-color: red !important;
   }
 
   /* ヘッダーの上部に余白を追加 */
