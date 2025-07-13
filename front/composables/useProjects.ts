@@ -5,7 +5,6 @@ import type { Project, ProjectApiResponse, ProjectForm } from '@/types/todo'
 // グローバルな状態をファイルレベルで定義（シングルトンパターン）
 const projects = ref<Project[]>([])
 const isLoading = ref(false)
-let isFetched = false // 一度取得したかのフラグ
 
 /**
  * プロジェクト管理のためのComposable
@@ -14,12 +13,11 @@ export const useProjects = () => {
 
   /**
    * プロジェクト一覧を取得する
-   * @param forceRefresh 強制的に再取得するかどうか
    */
-  const fetchProjects = async (forceRefresh: boolean = false) => {
-    // 強制リフレッシュまたは未取得の場合のみ実行
-    if (!forceRefresh && (isFetched || isLoading.value)) {
-      console.log('プロジェクト一覧は既に取得済み、またはリクエスト中です')
+  const fetchProjects = async () => {
+    // リクエスト中の場合はスキップ
+    if (isLoading.value) {
+      console.log('プロジェクト一覧のリクエスト中です')
       return projects.value
     }
 
@@ -47,7 +45,6 @@ export const useProjects = () => {
       }
 
       projects.value = data.value.projects
-      isFetched = true // 取得完了フラグを設定
       console.log('プロジェクト一覧取得成功:', projects.value)
     } catch (error) {
       console.error('プロジェクト取得エラー:', error)
@@ -78,8 +75,7 @@ export const useProjects = () => {
 
       ElMessage.success('プロジェクトが作成されました')
       
-      // 作成後にデータを強制リフレッシュ
-      await fetchProjects(true)
+      await fetchProjects()
     } catch (error) {
       ElMessage.error(error instanceof Error ? error.message : 'プロジェクトの作成に失敗しました')
       throw error
@@ -107,8 +103,7 @@ export const useProjects = () => {
 
       ElMessage.success('プロジェクトが更新されました')
       
-      // 更新後にデータを強制リフレッシュ
-      await fetchProjects(true)
+      await fetchProjects()
     } catch (error) {
       ElMessage.error(error instanceof Error ? error.message : 'プロジェクトの更新に失敗しました')
       throw error
@@ -156,8 +151,7 @@ export const useProjects = () => {
         ElMessage.success('プロジェクトが削除されました')
       }
       
-      // 削除後にデータを強制リフレッシュ
-      await fetchProjects(true)
+      await fetchProjects()
     } catch (error) {
       if (error === 'cancel') {
         // ユーザーがキャンセルした場合
@@ -166,15 +160,6 @@ export const useProjects = () => {
       ElMessage.error(error instanceof Error ? error.message : 'プロジェクトの削除に失敗しました')
       throw error
     }
-  }
-
-  /**
-   * プロジェクトキャッシュをクリアする（開発・テスト用）
-   */
-  const clearProjectsCache = () => {
-    isFetched = false
-    projects.value = []
-    console.log('プロジェクトキャッシュをクリアしました')
   }
 
   /**
@@ -192,7 +177,6 @@ export const useProjects = () => {
     createProject,
     updateProject,
     deleteProject,
-    clearProjectsCache,
     getProjectById
   }
 } 
