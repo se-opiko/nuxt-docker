@@ -33,24 +33,23 @@
         />
       </el-form-item>
 
-             <el-form-item label="カラー">
-         <div class="color-picker-container">
-           <el-color-picker 
-             v-model="inputProject.color" 
-             placeholder="プロジェクトのカラーを選択（オプション）"
-           />
-           <span class="color-picker-text">
-             {{ inputProject.color || 'カラーを選択してください' }}
-           </span>
-         </div>
-       </el-form-item>
-  
+      <el-form-item label="カラー">
+        <div class="color-picker-container">
+          <el-color-picker 
+            v-model="inputProject.color" 
+            placeholder="プロジェクトのカラーを選択（オプション）"
+          />
+          <span class="color-picker-text">
+            {{ inputProject.color || 'カラーを選択してください' }}
+          </span>
+        </div>
+      </el-form-item>
+
       <el-form-item>
-        <div style="display: flex; justify-content: center; width: 100%;">
+        <div class="form-actions">
           <el-button 
             type="primary" 
             @click="onSave(ruleFormRef)"
-            :loading="isLoading"
           >
             {{ saveButtonText }}
           </el-button>
@@ -67,7 +66,7 @@
  * プロジェクトの作成と編集を行うためのモーダルダイアログ
  * バリデーション機能付きフォームを提供する
  */
-import { ref, watch, reactive, computed } from 'vue'
+import { ref, watch, reactive, type PropType } from 'vue'
 import type { Project, ProjectForm } from '@/types/todo'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -108,11 +107,6 @@ const props = defineProps({
     type: Function,
     required: true
   },
-  /** ローディング状態 */
-  isLoading: {
-    type: Boolean,
-    default: false
-  }
 })
 
 /**
@@ -224,5 +218,14 @@ watch(() => props.project, (newProject) => {
 .color-picker-text {
   color: #606266;
   font-size: 14px;
+}
+
+/**
+ * フォームのアクションボタンのスタイル
+ */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 </style> 

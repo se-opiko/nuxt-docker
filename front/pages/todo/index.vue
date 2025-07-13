@@ -13,12 +13,11 @@
             <el-button type="primary" class="ml-2" @click="projectDialogVisible = true">プロジェクト作成</el-button>
             <el-button type="primary" class="ml-2" @click="dialogVisible = true">タスク作成</el-button>
             <task-input-modal v-model="dialogVisible" title="タスクを登録する" save-button-text="登録" :on-save="handleCreateTask" />
-            <project-input-modal 
+            <project-input-modal
               v-model="projectDialogVisible" 
               title="プロジェクトを作成する" 
               save-button-text="作成" 
               :on-save="handleCreateProject"
-              :is-loading="isLoading"
             />
           </div>
         </template>
