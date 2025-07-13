@@ -10,8 +10,15 @@
         </template>
         <template #extra>
           <div class="flex items-center">
-            <el-button type="primary" class="ml-2" @click="dialogVisible = true">作成</el-button>
+            <el-button type="primary" class="ml-2" @click="projectDialogVisible = true">プロジェクト作成</el-button>
+            <el-button type="primary" class="ml-2" @click="dialogVisible = true">タスク作成</el-button>
             <task-input-modal v-model="dialogVisible" title="タスクを登録する" save-button-text="登録" :on-save="handleCreateTask" />
+            <project-input-modal
+              v-model="projectDialogVisible" 
+              title="プロジェクトを作成する" 
+              save-button-text="作成" 
+              :on-save="handleCreateProject"
+            />
           </div>
         </template>
       </el-page-header>
@@ -79,15 +86,16 @@
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { Search, Plus } from '@element-plus/icons-vue'
-  import type { RuleForm } from '@/types/todo'
+  import type { RuleForm, ProjectForm } from '@/types/todo'
   import { useTasks } from '@/composables/useTasks'
   import { useProjects } from '@/composables/useProjects'
+  import ProjectInputModal from '@/components/project-input-modal.vue'
 
   const searchWord = ref('');
   const activeTab = ref('all');
   const selectedProjectId = ref<string | number>('');
   const { tasks, isLoading, searchParams, fetchTasks, createTask } = useTasks()
-  const { projects, fetchProjects } = useProjects()
+  const { projects, fetchProjects, createProject } = useProjects()
 
   onMounted(async () => {
     await Promise.all([
@@ -119,9 +127,20 @@
   }
 
   const dialogVisible = ref(false)
+  const projectDialogVisible = ref(false)
 
   const handleCreateTask = async (inputTask: RuleForm) => {
     await createTask(inputTask)
+  }
+
+  /**
+   * プロジェクト作成処理
+   * 
+   * @param inputProject - 作成するプロジェクトのフォームデータ
+   */
+  const handleCreateProject = async (inputProject: ProjectForm) => {
+    await createProject(inputProject)
+    // createProject内でfetchProjects(true)が実行されるため、明示的な再取得は不要
   }
 
   const tabPanels = [

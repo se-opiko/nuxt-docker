@@ -5,7 +5,7 @@ export type Project = {
   id: number;
   name: string;
   description: string | null;
-  color: string | null;
+  color: string;
   created_at: string;
   updated_at: string;
   tasks?: Task[];
@@ -59,5 +59,5 @@ export type ProjectApiResponse = {
 export type ProjectForm = {
   name: string;
   description: string;
-  color: string | null;
+  color: string;
 }
