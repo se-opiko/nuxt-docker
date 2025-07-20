@@ -45,7 +45,9 @@
       <div class="flex items-center justify-between mt-2">
         <div class="flex items-center">
           <!-- 優先度 -->
-          <el-tag class="mr-4" :type="priority === '高' ? 'danger' : priority === '中' ? 'warning' : 'success'">{{ priority }}</el-tag>
+          <el-tag class="mr-2" :type="priority === '高' ? 'danger' : priority === '中' ? 'warning' : 'success'">{{ priority }}</el-tag>
+          <!-- ステータス -->
+          <el-tag class="mr-4" :type="statusType">{{ statusText }}</el-tag>
           <!-- 更新日 -->
           <small>{{ formatDate(new Date(task.updated_at || task.created_at), 'YYYY/MM/DD') }}</small>
         </div>
@@ -97,6 +99,20 @@ async function editTask(inputTask: RuleForm) {
  */
 const priority = computed(() => {
   return props.task.priority === 1 ? '低' : props.task.priority === 2 ? '中' : '高'
+})
+
+/**
+ * ステータスの表示文字列を取得する
+ */
+const statusText = computed(() => {
+  return props.task.status === 1 ? '未着手' : props.task.status === 2 ? '進行中' : '完了'
+})
+
+/**
+ * ステータスのタイプを取得する（Element Plusのタグ色指定用）
+ */
+const statusType = computed(() => {
+  return props.task.status === 1 ? 'info' : props.task.status === 2 ? 'warning' : 'success'
 })
 
 /**
