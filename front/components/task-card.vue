@@ -45,7 +45,7 @@
       <div class="flex items-center justify-between mt-2">
         <div class="flex items-center">
           <!-- 優先度 -->
-          <el-tag class="mr-2" :type="priority === '高' ? 'danger' : priority === '中' ? 'warning' : 'success'">{{ priority }}</el-tag>
+          <el-tag class="mr-2" :type="priorityType">{{ priorityText }}</el-tag>
           <!-- ステータス -->
           <el-tag class="mr-4" :type="statusType">{{ statusText }}</el-tag>
           <!-- 更新日 -->
@@ -60,6 +60,14 @@ import type { PropType } from 'vue'
 import { Edit, Delete } from '@element-plus/icons-vue'
 import type { Task, RuleForm } from '@/types/todo'
 import type { ApiResponse } from '@/types/todo'
+import { 
+  TASK_STATUS, 
+  TASK_PRIORITY, 
+  TASK_STATUS_LABELS, 
+  TASK_PRIORITY_LABELS, 
+  TASK_STATUS_TYPES, 
+  TASK_PRIORITY_TYPES 
+} from '@/constants/task'
 import { ElMessage } from 'element-plus'
 import { useTasks } from '@/composables/useTasks'
 
@@ -97,22 +105,29 @@ async function editTask(inputTask: RuleForm) {
 /**
  * 優先度の表示文字列を取得する
  */
-const priority = computed(() => {
-  return props.task.priority === 1 ? '低' : props.task.priority === 2 ? '中' : '高'
+const priorityText = computed(() => {
+  return TASK_PRIORITY_LABELS[props.task.priority as keyof typeof TASK_PRIORITY_LABELS] || '不明'
+})
+
+/**
+ * 優先度のタイプを取得する（Element Plusのタグ色指定用）
+ */
+const priorityType = computed(() => {
+  return TASK_PRIORITY_TYPES[props.task.priority as keyof typeof TASK_PRIORITY_TYPES] || 'info'
 })
 
 /**
  * ステータスの表示文字列を取得する
  */
 const statusText = computed(() => {
-  return props.task.status === 1 ? '未着手' : props.task.status === 2 ? '進行中' : '完了'
+  return TASK_STATUS_LABELS[props.task.status as keyof typeof TASK_STATUS_LABELS] || '不明'
 })
 
 /**
  * ステータスのタイプを取得する（Element Plusのタグ色指定用）
  */
 const statusType = computed(() => {
-  return props.task.status === 1 ? 'info' : props.task.status === 2 ? 'warning' : 'success'
+  return TASK_STATUS_TYPES[props.task.status as keyof typeof TASK_STATUS_TYPES] || 'info'
 })
 
 /**

@@ -54,10 +54,12 @@
           v-model="inputTask.priority" 
           placeholder="優先度を選択"
         >
-          <!-- TODO: 優先度の一覧をDBから取得する --> 
-          <el-option label="低" :value="1" />
-          <el-option label="中" :value="2" />
-          <el-option label="高" :value="3" />
+          <el-option 
+            v-for="(label, value) in TASK_PRIORITY_LABELS" 
+            :key="value" 
+            :label="label" 
+            :value="Number(value)" 
+          />
         </el-select>
       </el-form-item>
   
@@ -66,10 +68,12 @@
           v-model="inputTask.status" 
           placeholder="ステータスを選択"
         >
-          <!-- TODO: ステータスの一覧をDBから取得する --> 
-          <el-option label="未着手" :value="1" />
-          <el-option label="進行中" :value="2" />
-          <el-option label="完了" :value="3" />
+          <el-option 
+            v-for="(label, value) in TASK_STATUS_LABELS" 
+            :key="value" 
+            :label="label" 
+            :value="Number(value)" 
+          />
         </el-select>
       </el-form-item>
   
@@ -89,6 +93,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { Task, RuleForm } from '@/types/todo'
+import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '@/constants/task'
 import type { FormInstance, FormRules } from 'element-plus'
 import { useProjects } from '@/composables/useProjects'
 
