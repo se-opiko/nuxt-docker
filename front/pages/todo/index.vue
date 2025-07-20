@@ -87,6 +87,7 @@
   import { ref, onMounted } from 'vue'
   import { Search, Plus } from '@element-plus/icons-vue'
   import type { RuleForm, ProjectForm } from '@/types/todo'
+  import { TASK_STATUS } from '@/constants/task'
   import { useTasks } from '@/composables/useTasks'
   import { useProjects } from '@/composables/useProjects'
   import ProjectInputModal from '@/components/project-input-modal.vue'
@@ -152,17 +153,17 @@
     {
       label: '未着手',
       name: 'pending',
-      status: 1,
+      status: TASK_STATUS.NOT_STARTED,
     },
     {
       label: '進行中', 
       name: 'progress',
-      status: 2,
+      status: TASK_STATUS.IN_PROGRESS,
     },
     {
       label: '完了',
       name: 'complete',
-      status: 3,
+      status: TASK_STATUS.COMPLETED,
     }
   ] as const
 
